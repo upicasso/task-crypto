@@ -12,7 +12,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./mysql/mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql:ro
+      - ./mysql/init-test-db.sh:/docker-entrypoint-initdb.d/init-test-db.sh:ro
     networks:
       - symfony-network
 
