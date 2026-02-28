@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Entity;
 
@@ -11,6 +12,11 @@ use Money\Money;
 #[ORM\Entity(repositoryClass: PortfolioValueRepository::class)]
 class PortfolioValue
 {
+    /**
+     * Name of currency in which calculate portfolio's value
+     */
+    const PORTFOLIO_VALUE_CURRENCY = 'USDT';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -41,7 +47,7 @@ class PortfolioValue
 
     public function getAmountUsdt(): Money
     {
-        return new Money($this->amountUsdt, new Currency("USDT"));
+        return new Money($this->amountUsdt, new Currency(self::PORTFOLIO_VALUE_CURRENCY));
     }
 
     public function setAmountUsdt(Money $amountUsdt): static

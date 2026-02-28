@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Tests\Service;
 
+use App\Entity\Investment;
 use App\Entity\PortfolioValue;
 use App\Repository\InvestmentRepository;
 use App\Repository\PortfolioValueRepository;
@@ -106,11 +108,11 @@ final class PortfolioValuationServiceTest extends TestCase
         $btcMoney = new Money('100', new Currency('BTC'));
         $usdtMoney = new Money('50', new Currency('USDT'));
 
-        $btcInvestment = $this->createMock(\App\Entity\Investment::class);
+        $btcInvestment = $this->createMock(Investment::class);
         $btcInvestment->method('getName')->willReturn('BTC');
         $btcInvestment->method('getValue')->willReturn($btcMoney);
 
-        $usdtInvestment = $this->createMock(\App\Entity\Investment::class);
+        $usdtInvestment = $this->createMock(Investment::class);
         $usdtInvestment->method('getName')->willReturn('USDT');
         $usdtInvestment->method('getValue')->willReturn($usdtMoney);
 

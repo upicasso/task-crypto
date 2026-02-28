@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
@@ -6,6 +7,10 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class PortfolioControllerTest extends WebTestCase
 {
+    /**
+     * @return void
+     * @throws \JsonException
+     */
     public function testHistoryReturnsValidJson(): void
     {
         $client = static::createClient();

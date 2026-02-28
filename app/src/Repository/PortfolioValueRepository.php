@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Repository;
 
@@ -32,24 +33,26 @@ class PortfolioValueRepository extends ServiceEntityRepository
      */
     public function getPortfolioValuesByRange(\DateTimeImmutable $from, \DateTimeImmutable $to): array
     {
-        $qb = $this->createQueryBuilder('p')
+        return $this->createQueryBuilder('p')
             ->orderBy('p.calculatedAt', 'ASC')
             ->andWhere('p.calculatedAt >= :from')
             ->setParameter('from', $from)
             ->andWhere('p.calculatedAt <= :to')
-            ->setParameter('to', $to);
-
-        return $qb->getQuery()->getResult();
+            ->setParameter('to', $to)
+            ->getQuery()
+            ->getResult();
     }
 
+    /**
+     * @return PortfolioValue[]
+     */
     public function getPortfolioValuesFrom(\DateTimeImmutable $from): array
     {
-        $qb = $this->createQueryBuilder('p')
+        return $this->createQueryBuilder('p')
             ->andWhere('p.calculatedAt >= :from')
             ->setParameter('from', $from)
-            ->orderBy('p.calculatedAt', 'ASC');
-
-        return $qb->getQuery()
+            ->orderBy('p.calculatedAt', 'ASC')
+            ->getQuery()
             ->getResult();
     }
 }

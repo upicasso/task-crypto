@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Service;
 
@@ -20,6 +21,7 @@ use Money\Money;
  */
 class PortfolioValuationService
 {
+    const CURRENCY_SUBUNIT = 8;
     /**
      * @param EntityManagerInterface $entityManager
      * @param BinancePriceService $binancePriceService
@@ -59,10 +61,10 @@ class PortfolioValuationService
     private function calculatePortfolioValue(): Money
     {
         $investments = $this->investmentRepository->findAll();
-        $portfolioValue = new Money('0', new Currency("USDT"));
+        $portfolioValue = new Money('0', new Currency(PortfolioValue::PORTFOLIO_VALUE_CURRENCY));
 
         foreach ($investments as $investment) {
-            if ($investment->getName() === "USDT") {
+            if ($investment->getName() === PortfolioValue::PORTFOLIO_VALUE_CURRENCY) {
                 $portfolioValue = $portfolioValue->add($investment->getValue());
             } else {
                 $convertedInvestment = $this->convertToUsdt($investment->getValue());
@@ -79,7 +81,7 @@ class PortfolioValuationService
      */
     public function convertToUsdt(Money $money): Money
     {
-        return $this->getConverter($money)->convert($money, new Currency('USDT'));
+        return $this->getConverter($money)->convert($money, new Currency(PortfolioValue::PORTFOLIO_VALUE_CURRENCY));
     }
 
     /**
@@ -164,6 +166,6 @@ class PortfolioValuationService
      */
     private function getCurrencyListData(): array
     {
-        return array_fill_keys($this->investmentRepository->findAllNames(), 8);
+        return array_fill_keys($this->investmentRepository->findAllNames(), self::CURRENCY_SUBUNIT);
     }
 }

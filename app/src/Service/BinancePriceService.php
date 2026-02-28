@@ -1,31 +1,25 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\PortfolioValue;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-/**
- *
- */
 class BinancePriceService
 {
     /**
-     * @var HttpClientInterface
-     */
-    private HttpClientInterface $httpClient;
-    /**
-     *
+     * Const base url
      */
     private const BASE_URL = 'https://api.binance.com';
 
     /**
      * @param HttpClientInterface $httpClient
      */
-    public function __construct(HttpClientInterface $httpClient)
-    {
-        $this->httpClient = $httpClient;
+    public function __construct(
+        private readonly HttpClientInterface $httpClient
+    ) {
     }
-
 
     /**
      * @param string $code
@@ -35,11 +29,11 @@ class BinancePriceService
      */
     public function getExchangeRate(string $code): float
     {
-        if (strtoupper($code) === 'USDT') {
+        if (strtoupper($code) === PortfolioValue::PORTFOLIO_VALUE_CURRENCY) {
             return 1.0;
         }
 
-        $symbol = strtoupper($code).'USDT';
+        $symbol = strtoupper($code). PortfolioValue::PORTFOLIO_VALUE_CURRENCY;
 
         $response = $this->httpClient->request(
             'GET',
