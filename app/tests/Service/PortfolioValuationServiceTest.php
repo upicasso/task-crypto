@@ -10,10 +10,18 @@ use App\Service\PortfolioValuationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Money\Currency;
 use Money\Money;
+use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
 
+/**
+ *
+ */
 final class PortfolioValuationServiceTest extends TestCase
 {
+    /**
+     * @return void
+     * @throws Exception
+     */
     public function testCalculatePortfolioValueConvertsNonUsdtAndSums(): void
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
@@ -28,26 +36,28 @@ final class PortfolioValuationServiceTest extends TestCase
             $portfolioValueRepository
         );
 
-        list($btcInvestment, $usdtInvestment) = $this->getInvestmentMocks();
-
         $investmentRepository->method('findAll')
             ->willReturn($this->getInvestmentMocks());
 
         $investmentRepository->method('findAllNames')
             ->willReturn(['BTC', 'USDT']);
 
-        $binance->method('getExchangeRate')
-            ->with('BTC')
+        $binance->expects($this->once())
+            ->method('getExchangeRate')
             ->willReturn(2.0);
 
-        $result = $service->calculatePortfolioValue();
+        $result = $service->createNewPortfolioValuation();
+        $amount = $result->getAmountUsdt();
 
-        self::assertInstanceOf(Money::class, $result);
-        self::assertSame('USDT', $result->getCurrency()->getCode());
+        self::assertSame('USDT', $amount->getCurrency()->getCode());
         // 100 * 2 (BTC->USDT) + 50 USDT
-        self::assertSame('250', $result->getAmount());
+        self::assertSame('250', $amount->getAmount());
     }
 
+    /**
+     * @return void
+     * @throws Exception
+     */
     public function testGetPortfolioHistoryMapsValues(): void
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
@@ -62,23 +72,34 @@ final class PortfolioValuationServiceTest extends TestCase
             $portfolioValueRepository
         );
 
-        $pv = new PortfolioValue();
-        $pv->setCalculatedAt(new \DateTimeImmutable('2026-02-26T10:00:00Z'));
-        $pv->setAmountUsdt(new Money('12345678', new Currency('USDT')));
-
         $portfolioValueRepository->method('getPortfolioValues')
-            ->willReturn([$pv]);
+            ->willReturn($this->getPortfolioValueMocks());
 
         $result = $service->getPortfolioHistory();
 
-        self::assertCount(1, $result);
+        self::assertCount(2, $result);
         self::assertSame('2026-02-26T10:00:00Z', $result[0]['time']);
-        self::assertSame(123456.78, $result[0]['amount_usdt']);
+        self::assertSame(12345678.0, $result[0]['amount_usdt']);
     }
 
     /**
+     * @return PortfolioValue[]
+     */
+    private function getPortfolioValueMocks(): array
+    {
+        $firstPortfolioValue = new PortfolioValue();
+        $firstPortfolioValue->setCalculatedAt(new \DateTimeImmutable('2026-02-26T10:00:00Z'));
+        $firstPortfolioValue->setAmountUsdt(new Money('12345678', new Currency('USDT')));
+
+        $secondPortfolioValue = new PortfolioValue();
+        $secondPortfolioValue->setCalculatedAt(new \DateTimeImmutable('2026-02-26T10:00:00Z'));
+        $secondPortfolioValue->setAmountUsdt(new Money('12345678', new Currency('USDT')));
+
+        return [$firstPortfolioValue, $secondPortfolioValue];
+    }
+    /**
      * @return array
-     * @throws \PHPUnit\Framework\MockObject\Exception
+     * @throws Exception
      */
     private function getInvestmentMocks(): array
     {

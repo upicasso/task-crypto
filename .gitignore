@@ -1,5 +1,6 @@
 .idea/*
-
+docker/.env
+app/.env.*
 ###> symfony/framework-bundle ###
 app/.env.local.php
 app/.env.local

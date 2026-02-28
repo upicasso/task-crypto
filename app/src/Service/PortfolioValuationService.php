@@ -15,24 +15,28 @@ use Money\Currency;
 use Money\Exchange\FixedExchange;
 use Money\Money;
 
+/**
+ * Convert currencies, creates portfolio value entity, prepare data for the plot
+ */
 class PortfolioValuationService
 {
-    private EntityManagerInterface $entityManager;
-
-    private BinancePriceService $binancePriceService;
-
-    private InvestmentRepository $investmentRepository;
-
-    private PortfolioValueRepository $portfolioValueRepository;
-
-    public function __construct(EntityManagerInterface $entityManager, BinancePriceService $binancePriceService, InvestmentRepository $investmentRepository, PortfolioValueRepository $portfolioValueRepository)
-    {
-        $this->entityManager = $entityManager;
-        $this->binancePriceService = $binancePriceService;
-        $this->investmentRepository = $investmentRepository;
-        $this->portfolioValueRepository = $portfolioValueRepository;
+    /**
+     * @param EntityManagerInterface $entityManager
+     * @param BinancePriceService $binancePriceService
+     * @param InvestmentRepository $investmentRepository
+     * @param PortfolioValueRepository $portfolioValueRepository
+     */
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly BinancePriceService $binancePriceService,
+        private readonly InvestmentRepository $investmentRepository,
+        private readonly PortfolioValueRepository$portfolioValueRepository,
+    ) {
     }
 
+    /**
+     * @return PortfolioValue
+     */
     public function createNewPortfolioValuation(): PortfolioValue
     {
         $portfolioValue = new PortfolioValue();
@@ -42,15 +46,17 @@ class PortfolioValuationService
         try {
             $this->entityManager->persist($portfolioValue);
             $this->entityManager->flush();
-        } catch (ORMException $e) {
-
+        } catch (\Exception $e) {
+            throw new \RuntimeException("Error while saving PortfolioValue entity. Error: " . $e->getMessage());
         }
-
 
         return $portfolioValue;
     }
 
-    public function calculatePortfolioValue(): ?Money
+    /**
+     * @return Money
+     */
+    private function calculatePortfolioValue(): Money
     {
         $investments = $this->investmentRepository->findAll();
         $portfolioValue = new Money('0', new Currency("USDT"));
@@ -67,11 +73,18 @@ class PortfolioValuationService
         return $portfolioValue;
     }
 
+    /**
+     * @param Money $money
+     * @return Money
+     */
     public function convertToUsdt(Money $money): Money
     {
         return $this->getConverter($money)->convert($money, new Currency('USDT'));
     }
 
+    /**
+     * @return array
+     */
     public function getPortfolioHistory(): array
     {
         $values = $this->portfolioValueRepository->getPortfolioValues();
@@ -79,6 +92,11 @@ class PortfolioValuationService
         return $this->mapPortfolioValuesToArray($values);
     }
 
+    /**
+     * @param \DateTimeImmutable $fromParam
+     * @param \DateTimeImmutable $toParam
+     * @return array
+     */
     public function getPortfolioHistoryByDateRange(\DateTimeImmutable $fromParam, \DateTimeImmutable $toParam): array
     {
         $values = $this->portfolioValueRepository->getPortfolioValuesByRange($fromParam, $toParam);
@@ -86,6 +104,13 @@ class PortfolioValuationService
         return $this->mapPortfolioValuesToArray($values);
     }
 
+    /**
+     * @param int $hours
+     * @return array
+     * @throws \DateInvalidOperationException
+     * @throws \DateMalformedIntervalStringException
+     * @throws \DateMalformedStringException
+     */
     public function getPortfolioHistoryByHours(int $hours): array
     {
         $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
@@ -120,15 +145,23 @@ class PortfolioValuationService
      */
     private function getConverter(Money $money): Converter
     {
-        $exchange = new FixedExchange([
-            $money->getCurrency()->getCode() => [
-                'USDT' => $this->binancePriceService->getExchangeRate($money->getCurrency()->getCode())
-            ]
-        ]);
+        try {
+            $exchange = new FixedExchange([
+                $money->getCurrency()->getCode() => [
+                    'USDT' => $this->binancePriceService->getExchangeRate($money->getCurrency()->getCode())
+                ]
+            ]);
+        } catch (\Exception $e) {
+            throw new \RuntimeException("Error while getting exchange rate. Error: " . $e->getMessage());
+        }
+
 
         return new Converter(new CurrencyList($this->getCurrencyListData()), $exchange);
     }
 
+    /**
+     * @return array
+     */
     private function getCurrencyListData(): array
     {
         return array_fill_keys($this->investmentRepository->findAllNames(), 8);

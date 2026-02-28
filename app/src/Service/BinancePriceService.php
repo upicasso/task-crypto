@@ -4,22 +4,37 @@ namespace App\Service;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+/**
+ *
+ */
 class BinancePriceService
 {
+    /**
+     * @var HttpClientInterface
+     */
     private HttpClientInterface $httpClient;
+    /**
+     *
+     */
     private const BASE_URL = 'https://api.binance.com';
 
+    /**
+     * @param HttpClientInterface $httpClient
+     */
     public function __construct(HttpClientInterface $httpClient)
     {
         $this->httpClient = $httpClient;
     }
 
+
     /**
-     * Returns the price of given currency.
+     * @param string $code
+     * @return float
+
+     * @throws \HttpException
      */
     public function getExchangeRate(string $code): float
     {
-        // Special-case USDT itself
         if (strtoupper($code) === 'USDT') {
             return 1.0;
         }
@@ -35,6 +50,10 @@ class BinancePriceService
                 ],
             ]
         );
+
+        if ($response->getStatusCode() !== 200) {
+            throw new \HttpException("Server response status code: " . $response->getStatusCode());
+        }
 
         $data = $response->toArray(false);
 
